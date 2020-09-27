@@ -19,7 +19,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 class MainActivity : AppCompatActivity(), ItemClickListener {
 
     private lateinit var viewManager: LinearLayoutManager
-    private lateinit var employeeList: ArrayList<EmployeeEntity>
     private lateinit var employeeAdapter: EmployeeAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,44 +39,29 @@ class MainActivity : AppCompatActivity(), ItemClickListener {
             })
         }
 
-        employeeList = ArrayList()
-
         viewManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
         employeeAdapter =
-            EmployeeAdapter(employeeList, this)
+            EmployeeAdapter(ArrayList<EmployeeEntity>(), this)
         recyclerview.setHasFixedSize(true)
         recyclerview.layoutManager = viewManager
         recyclerview.adapter = employeeAdapter
         val dec = DividerItemDecoration(this, (viewManager as LinearLayoutManager).orientation);
         recyclerview.addItemDecoration(dec)
 
-        val searchText = viewModel.getSearchText()
 
-        viewModel.getEmployeeList().observe(this, Observer<List<EmployeeEntity>> {
+        viewModel.employeeList.observe(this, Observer<List<EmployeeEntity>> {
             if (it.isEmpty()) {
                 return@Observer
             }
             progressBar.visibility = View.GONE
-            employeeList = it.filter {
-                it.name!!.contains(searchText, true) || it.email!!.contains(
-                    searchText,
-                    true
-                )
-            } as ArrayList<EmployeeEntity>
+            val employeeList = it as ArrayList<EmployeeEntity>
             employeeAdapter.updateData(employeeList)
             employeeAdapter.notifyDataSetChanged()
         })
 
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String): Boolean {
-                viewModel.setSearchText(newText)
-
-                employeeAdapter.updateData(employeeList.filter {
-                    it.name!!.contains(newText, true) || it.email!!.contains(
-                        newText, true
-                    )
-                } as ArrayList<EmployeeEntity>)
-                employeeAdapter.notifyDataSetChanged()
+                employeeAdapter.filter.filter(newText);
                 return false
             }
 
@@ -89,22 +73,21 @@ class MainActivity : AppCompatActivity(), ItemClickListener {
         })
     }
 
-    override fun onClick(index: Int) {
-        val clickedItem = employeeList[index]
+    override fun onClick(clickedEmployee: EmployeeEntity) {
         val parcel = EmployeeParcelable(
-            clickedItem.name,
-            clickedItem.email,
-            clickedItem.phone,
-            clickedItem.profileImage,
-            clickedItem.username,
-            clickedItem.website,
-            clickedItem.company.bs,
-            clickedItem.company.catchPhrase,
-            clickedItem.company.companyName,
-            clickedItem.address.city,
-            clickedItem.address.street,
-            clickedItem.address.suite,
-            clickedItem.address.zipCode
+            clickedEmployee.name,
+            clickedEmployee.email,
+            clickedEmployee.phone,
+            clickedEmployee.profileImage,
+            clickedEmployee.username,
+            clickedEmployee.website,
+            clickedEmployee.company.bs,
+            clickedEmployee.company.catchPhrase,
+            clickedEmployee.company.companyName,
+            clickedEmployee.address.city,
+            clickedEmployee.address.street,
+            clickedEmployee.address.suite,
+            clickedEmployee.address.zipCode
         )
         val intent = Intent(this, DetailActivity::class.java)
         val bundle = Bundle()
